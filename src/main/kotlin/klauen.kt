@@ -1,22 +1,31 @@
 import java.util.concurrent.atomic.AtomicInteger
 
 sealed class Work {
-    class Empty : Work()
-    class Abort : Work()
-    class Data<out T>(val data: T) : Work()
+    object Empty : Work()
+    object Abort : Work()
+    class Data<out T>(val data: T) : Work() {
+        override fun equals(other: Any?): Boolean {
+            if (other == null || other.javaClass != this.javaClass)
+                return false
+            other as Work.Data<*>
+            return this.data == other.data
+        }
+
+        override fun hashCode(): Int {
+            return data?.hashCode() ?: 0
+        }
+    }
 }
 
 class Deque<T> {
-    @Volatile
-    var top: AtomicInteger = AtomicInteger(0)
-    @Volatile
-    var bottom: AtomicInteger = AtomicInteger(0)
-    @Volatile private var buffer: Buffer<T?> = Buffer()
+    private var top: AtomicInteger = AtomicInteger(0)
+    private var bottom: AtomicInteger = AtomicInteger(0)
+    private var buffer: Buffer<T?> = Buffer()
 
     fun pushBottom(data: T) {
-        val t = top.get()
+        // val t = top.get()
         val b = bottom.get()
-        val size = b - t
+        // val size = b - t
         // Grow if size >= buffer.size - 1
         buffer.put(b, data)
         bottom.incrementAndGet()
@@ -27,20 +36,24 @@ class Deque<T> {
         val b = bottom.get()
         val i = b - t
         if (i <= 0) {
-            return Work.Empty()
+            return Work.Empty
         }
         val item = this.buffer.get(i)
         if (!top.compareAndSet(t, t + 1))
-            return Work.Abort()
+            return Work.Abort
         return Work.Data(item)
     }
 }
 
 class Buffer<T> {
-    private var list: MutableList<T> = mutableListOf()
+    private var list: MutableList<T> = mutableListOf() // arrayList?
 
     fun put(index: Int, data: T) {
-        list[index % list.size] = data
+        val calculatedIndex = if (index == 0) 0 else index % list.size
+        if (calculatedIndex >= list.size) {
+            list.add(calculatedIndex, data)
+        } else
+            list[calculatedIndex] = data
     }
 
     fun get(index: Int): T {
