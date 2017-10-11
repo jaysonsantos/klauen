@@ -25,6 +25,9 @@ class Deque<T> {
     private var bottom: AtomicInteger = AtomicInteger(0)
     private var buffer: Buffer<T?> = Buffer()
 
+    /**
+     * Push items into the bottom of the queue.
+     */
     fun pushBottom(data: T) {
         val t = top.get()
         val b = bottom.get()
@@ -79,6 +82,10 @@ class Buffer<T> {
      * Append data to the list, used when there is not enough space to use it as circular.
      */
     fun put(data: T) = list.add(data)
+
+    /**
+     * Get an item from the list in a specific index.
+     */
     fun get(index: Int): T = list[index % list.size]
 }
 
