@@ -17,18 +17,7 @@ sealed class Work {
     /**
      * The actual data from the queue.
      */
-    class Data<out T>(val data: T) : Work() {
-        override fun equals(other: Any?): Boolean {
-            if (other == null || other::class != this::class)
-                return false
-            other as Work.Data<*>
-            return this.data == other.data
-        }
-
-        override fun hashCode(): Int {
-            return data?.hashCode() ?: 0
-        }
-    }
+     data class Data<out T>(val data: T) : Work()
 }
 
 class Deque<T> {
@@ -57,11 +46,11 @@ class Deque<T> {
     fun steal(): Work {
         val t = top.get()
         val b = bottom.get()
-        val i = b - t
-        if (i <= 0) {
+        val size = b - t
+        if (size <= 0) {
             return Work.Empty
         }
-        val item = this.buffer.get(i)
+        val item = this.buffer.get(t)
         if (!top.compareAndSet(t, t + 1))
             return Work.Abort
         return Work.Data(item)
