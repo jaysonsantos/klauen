@@ -61,14 +61,17 @@ class Deque<T> {
 
 /**
  * Buffer class which uses a list as circular list.
- * @param logSize
+ * @param logSize buffers always double it's size when grow is called.
  */
 class Buffer<T>(private val logSize: Int) {
     val size: Int = 1 shl logSize
     private val list: MutableList<T?> = mutableListOf<T?>()
 
+    /**
+     * Initialize the list with null values.
+     */
     init {
-        for (i in 0..size) {
+        for (i in 0 until size) {
             list.add(i, null)
         }
     }
@@ -89,8 +92,8 @@ class Buffer<T>(private val logSize: Int) {
      * Grow the buffer by creating a new version of it and copying over all items.
      */
     fun grow(bottom: Int, top: Int): Buffer<T> {
-        val buffer = Buffer<T>(size + 1)
-        for (i in top..bottom) {
+        val buffer = Buffer<T>(logSize + 1)
+        for (i in top until bottom) {
             buffer.put(i, get(i))
         }
         return buffer

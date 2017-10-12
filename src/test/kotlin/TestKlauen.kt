@@ -22,9 +22,14 @@ class TestDeque {
             worker.pushBottom(i)
         }
 
-        for (i in 0..1000) {
-            val stealedData = stealer.steal()
-            assertEquals(Work.Data(i), stealedData)
+        assertEquals(Work.Data(0), stealer.steal())
+        worker.pushBottom(-1)
+
+        for (i in 1..999) {
+            assertEquals(Work.Data(i), stealer.steal())
         }
+        assertEquals(Work.Data(1000), stealer.steal())
+        assertEquals(Work.Data(-1), stealer.steal())
+        assertEquals(Work.Empty, stealer.steal())
     }
 }
