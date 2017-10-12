@@ -17,13 +17,13 @@ sealed class Work {
     /**
      * The actual data from the queue.
      */
-     data class Data<out T>(val data: T) : Work()
+    data class Data<out T>(val data: T) : Work()
 }
 
 class Deque<T> {
     private var top: AtomicInteger = AtomicInteger(0)
     private var bottom: AtomicInteger = AtomicInteger(0)
-    private var buffer: Buffer<T?> = Buffer()
+    private var buffer: Buffer<T> = Buffer(0)
 
     /**
      * Push items into the bottom of the queue.
@@ -34,15 +34,14 @@ class Deque<T> {
         val size = b - t
         // If size >= buffer.size - 1 it means that there is no space left to rotate so we have to "grow" the list
         // and it is done by just by appending data
-        if (size >= buffer.size())
-            buffer.put(data)
-        else
-            buffer.put(b, data)
+        if (size >= buffer.size)
+            buffer = buffer.grow(b, t)
+        buffer.put(b, data)
         bottom.incrementAndGet()
     }
 
     /**
-     * Steal a work from buffer and it is thread safe.
+     * Steal a work from the top of the buffer and it is thread safe.
      * It can return 3 result Work.Empty when the queue is empty, Work.Abort when some other thread stole your data
      * and Work.Data(T) with desired data.
      */
@@ -61,32 +60,41 @@ class Deque<T> {
 }
 
 /**
- * Buffer class which uses a list as circular array.
+ * Buffer class which uses a list as circular list.
+ * @param logSize
  */
-class Buffer<T> {
-    private var list: MutableList<T> = mutableListOf() // arrayList?
+class Buffer<T>(private val logSize: Int) {
+    val size: Int = 1 shl logSize
+    private val list: MutableList<T?> = mutableListOf<T?>()
 
-    /**
-     * Actual size of the list.
-     */
-    fun size(): Int = list.size
+    init {
+        for (i in 0..size) {
+            list.add(i, null)
+        }
+    }
 
     /**
      * Add a data to the circular list.
      */
     fun put(index: Int, data: T) {
-        list[index % list.size] = data
+        list[index % size] = data
     }
-
-    /**
-     * Append data to the list, used when there is not enough space to use it as circular.
-     */
-    fun put(data: T) = list.add(data)
 
     /**
      * Get an item from the list in a specific index.
      */
-    fun get(index: Int): T = list[index % list.size]
+    fun get(index: Int): T = list[index % size]!!
+
+    /**
+     * Grow the buffer by creating a new version of it and copying over all items.
+     */
+    fun grow(bottom: Int, top: Int): Buffer<T> {
+        val buffer = Buffer<T>(size + 1)
+        for (i in top..bottom) {
+            buffer.put(i, get(i))
+        }
+        return buffer
+    }
 }
 
 /**

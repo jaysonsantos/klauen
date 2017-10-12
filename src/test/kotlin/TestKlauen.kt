@@ -11,6 +11,13 @@ class TestDeque {
         assertEquals(Work.Empty, stealer.steal())
         assertEquals(Work.Empty, stealer.steal())
 
+        worker.pushBottom(0)
+        worker.pushBottom(1)
+
+        assertEquals(Work.Data(0), stealer.steal())
+        assertEquals(Work.Data(1), stealer.steal())
+        assertEquals(Work.Empty, stealer.steal())
+
         for (i in 0..1000) {
             worker.pushBottom(i)
         }
