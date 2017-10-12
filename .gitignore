@@ -3,4 +3,7 @@ out/
 .gradle
 .idea
 *.iml
-
+bin/
+.settings/
+.project
+.classpath
